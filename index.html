@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEVI'S 鑑定 | MIKOSHIYA LAB</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&family=Shippori+Mincho:wght@400;700&display=swap');
+  :root {
+    --enji: #800020; --enji-dark: #5a0016; --enji-light: #a0002a;
+    --gold: #c8a96e; --bg: #0d0808; --surface: #1a0e0e;
+    --surface2: #241414; --text: #f0e8e0; --muted: #8a7060;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: 'Noto Serif JP', serif;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(128,0,32,0.08) 0%, transparent 60%);
+    min-height: 100vh;
+  }
+  header { text-align: center; padding: 40px 20px 30px; border-bottom: 1px solid rgba(128,0,32,0.3); }
+  h1 { font-family: 'Shippori Mincho', serif; font-size: 28px; letter-spacing: 8px; }
+  h1 span { color: var(--enji); }
+  .container { max-width: 800px; margin: 0 auto; padding: 30px 20px; }
+  .section-title { font-size: 11px; letter-spacing: 5px; color: var(--gold); margin: 24px 0 12px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(128,0,32,0.5), transparent); }
+  
+  .upload-area {
+    border: 1px dashed rgba(128,0,32,0.5); border-radius: 4px; padding: 40px;
+    text-align: center; cursor: pointer; background: var(--surface); transition: 0.3s;
+  }
+  .upload-area:hover { border-color: var(--enji); background: var(--surface2); }
+  #imageInput { display: none; }
+  #preview { max-width: 100%; max-height: 300px; margin-top: 16px; display: none; border: 1px solid var(--enji); margin-left: auto; margin-right: auto; }
+
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 30px; }
+  @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+  .option-card { background: var(--surface); border: 1px solid rgba(128,0,32,0.2); padding: 14px; border-radius: 4px; transition: 0.3s; }
+  .option-label { font-size: 10px; color: var(--gold); margin-bottom: 10px; letter-spacing: 2px; }
+  
+  .radio-btn.disabled { opacity: 0.2; pointer-events: none; }
+  .size-select {
+    width: 100%; background: var(--surface2); color: var(--text); border: 1px solid rgba(128,0,32,0.4);
+    padding: 8px; font-size: 13px; font-family: 'Noto Serif JP', serif; outline: none; border-radius: 2px;
+  }
+
+  .radio-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .radio-btn input { display: none; }
+  .radio-btn span {
+    display: inline-block; padding: 5px 10px; border: 1px solid rgba(128,0,32,0.3);
+    font-size: 11px; color: var(--muted); cursor: pointer; transition: 0.2s; user-select: none;
+  }
+  .radio-btn input:checked + span { background: var(--enji); border-color: var(--enji); color: #fff; }
+
+  .appraise-btn { width: 100%; padding: 20px; background: var(--enji); color: #fff; border: none; font-family: 'Shippori Mincho', serif; font-size: 16px; letter-spacing: 8px; cursor: pointer; margin-top: 20px; }
+  .appraise-btn:disabled { background: #3a2020; }
+  
+  .loading { display: none; text-align: center; padding: 30px; color: var(--gold); font-size: 13px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+  
+  .result-section { display: none; margin-top: 30px; animation: fadeIn 0.8s ease; }
+  @keyframes fadeIn { from{opacity:0;} to{opacity:1;} }
+  .result-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .result-cards { grid-template-columns: 1fr; } }
+  .result-card { background: var(--surface); border: 1px solid var(--enji); padding: 15px; text-align: center; border-top: 3px solid var(--enji); }
+  .result-card-label { font-size: 9px; color: var(--gold); margin-bottom: 8px; }
+  .result-card-value { font-size: 16px; font-weight: 700; color: var(--text); }
+  .result-detail { background: var(--surface); padding: 20px; font-size: 13px; line-height: 2; color: var(--muted); white-space: pre-wrap; border: 1px solid rgba(128,0,32,0.2); margin-bottom: 20px; }
+  .auction-btn { display: inline-block; padding: 12px 24px; background: var(--surface2); color: var(--gold); border: 1px solid var(--enji); text-decoration: none; font-size: 12px; letter-spacing: 2px; transition: 0.3s; border-radius: 2px; }
+  .auction-btn:hover { background: var(--enji); color: #fff; }
+  .error-msg { color: #ff6b6b; display: none; padding: 15px; border: 1px solid #ff6b6b; margin: 20px 0; background: rgba(255,0,0,0.1); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <div style="font-size:10px; letter-spacing:4px; color:var(--gold); margin-bottom:10px;">MIKOSHIYA LAB — AI APPRAISAL</div>
+  <h1>LEVI'S <span>鑑　定</span></h1>
+</header>
+<div class="container">
+  <div class="upload-section">
+    <div class="section-title">画　像</div>
+    <div class="upload-area" id="uploadArea">
+      <div id="uploadContent"><div style="font-size:30px;">📷</div><div style="font-size:12px; color:var(--muted);">クリックして写真を選択</div></div>
+      <input type="file" id="imageInput" accept="image/*">
+      <img id="preview" alt="プレビュー">
+    </div>
+  </div>
+
+  <div class="section-title">詳　細　情　報</div>
+  <div class="options-grid">
+    <div class="option-card"><div class="option-label">① サイズ表記 W</div><select name="size_w" class="size-select"><option value="">選択なし</option><script>for(let i=26; i<=40; i++) document.write(`<option value="W${i}">W${i}</option>`);</script></select></div>
+    <div class="option-card"><div class="option-label">② サイズ表記 L</div><select name="size_l" class="size-select"><option value="">選択なし</option><script>for(let i=26; i<=40; i++) document.write(`<option value="L${i}">L${i}</option>`);</script></select></div>
+    <div class="option-card"><div class="option-label">① サイズ実寸 W (inch)</div><select name="actual_w" class="size-select"><option value="">選択なし</option><script>for(let i=25; i<=42; i++) document.write(`<option value="実寸W${i}">W${i}</option>`);</script></select></div>
+    <div class="option-card"><div class="option-label">② サイズ実寸 L (inch)</div><select name="actual_l" class="size-select"><option value="">選択なし</option><script>for(let i=20; i<=40; i++) document.write(`<option value="実寸L${i}">L${i}</option>`);</script></select></div>
+
+    <div class="option-card"><div class="option-label">③ 赤タブ</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="red_tab" value="Big E"><span>Big E</span></label><label class="radio-btn"><input type="radio" name="red_tab" value="Small e"><span>Small e</span></label><label class="radio-btn"><input type="radio" name="red_tab" value="赤タブ欠損"><span>欠損</span></label></div></div>
+    
+    <div class="option-card"><div class="option-label">④ パッチ材質</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="patch_material" value="レザーパッチ"><span>レザー</span></label><label class="radio-btn"><input type="radio" name="patch_material" value="紙パッチ"><span>紙</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑤ パッチ状態</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="patch_condition" value="パッチ有"><span>有</span></label><label class="radio-btn"><input type="radio" name="patch_condition" value="パッチ無"><span>無</span></label><label class="radio-btn"><input type="radio" name="patch_condition" value="パッチ一部有"><span>一部有</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑥ 裾</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="hem" value="チェーンステッチ裾"><span>チェーン</span></label><label class="radio-btn"><input type="radio" name="hem" value="シングルステッチ裾"><span>シングル</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑦ フロント</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="front" value="ボタンフライ"><span>ボタン</span></label><label class="radio-btn"><input type="radio" name="front" value="ジッパーフライ"><span>ジッパー</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑧ 赤耳</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="selvedge" value="赤耳有"><span>有</span></label><label class="radio-btn"><input type="radio" name="selvedge" value="赤耳無"><span>無</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑨ コインポケット赤耳</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="coin_selvedge" value="コインポケット赤耳有"><span>有</span></label><label class="radio-btn"><input type="radio" name="coin_selvedge" value="コインポケット赤耳無"><span>無</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑩ コインポケット裏</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="coin_stitch" value="コインポケット裏シングルステッチ"><span>シングル</span></label><label class="radio-btn"><input type="radio" name="coin_stitch" value="コインポケット裏チェーンステッチ"><span>チェーン</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑪ トップボタン横</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="top_stitch" value="Vステッチ"><span>Vステッチ</span></label><label class="radio-btn"><input type="radio" name="top_stitch" value="平行ステッチ"><span>平行</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑫ 隠しリベット</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="hidden_rivet" value="隠しリベット有"><span>有</span></label><label class="radio-btn"><input type="radio" name="hidden_rivet" value="隠しリベット無"><span>無</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑬ バックポケット</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="back_stitch" value="バックポケットシングルステッチ"><span>シングル</span></label><label class="radio-btn"><input type="radio" name="back_stitch" value="バックポケットチェーンステッチ"><span>チェーン</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑭ バックカンヌキ</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="back_tack" value="黒カンヌキ"><span>黒</span></label><label class="radio-btn"><input type="radio" name="back_tack" value="金カンヌキ"><span>金</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑮ 股下カンヌキ</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="crotch_tack" value="股下カンヌキ無"><span>無</span></label><label class="radio-btn"><input type="radio" name="crotch_tack" value="股下カンヌキ有"><span>有</span></label><label class="radio-btn"><input type="radio" name="crotch_tack" value="ズレカン"><span>ズレカン</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑯ フライボタン</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="fly_btn" value="通常Rボタン"><span>通常R</span></label><label class="radio-btn"><input type="radio" name="fly_btn" value="足長Rボタン"><span>足長R</span></label></div></div>
+    <div class="option-card"><div class="option-label">⑰ アウトシーム</div><div class="radio-group"><label class="radio-btn"><input type="radio" name="out_seam" value="シングル×シングル"><span>S×S</span></label><label class="radio-btn"><input type="radio" name="out_seam" value="シングル×チェーン"><span>S×C</span></label></div></div>
+  </div>
+
+  <button class="appraise-btn" id="appraiseBtn" onclick="appraise()">鑑　定　開　始</button>
+  <div class="loading" id="loading">MIKOSHIYA AI鑑定士がサーバー経由で解析中だペン...</div>
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="result-section" id="resultSection">
+    <div class="section-title">鑑定報告書</div>
+    <div class="result-cards">
+      <div class="result-card"><div class="result-card-label">推定モデル</div><div class="result-card-value" id="resultModel">—</div></div>
+      <div class="result-card"><div class="result-card-label">推定年代</div><div class="result-card-value" id="resultEra">—</div></div>
+      <div class="result-card"><div class="result-card-label">現在の相場</div><div class="result-card-value" id="resultValue">—</div></div>
+    </div>
+    <div class="result-detail" id="resultDetail"></div>
+    <div style="text-align:center;"><a href="#" id="auctionLink" target="_blank" class="auction-btn">ヤフオクで実勢相場を確認</a></div>
+  </div>
+</div>
+
+<script>
+  // ★重要：ここにGASでデプロイした「ウェブアプリのURL」を貼り付けてペン！
+  const GAS_WEBAPP_URL = 'ここにGASのURLを貼り付けペン！';
+
+  // 連動ロジック・マップ
+  const LOGIC_RULES = {
+    'coin_selvedge': { 'コインポケット赤耳有': { 'coin_stitch': ['コインポケット裏シングルステッチ'] } },
+    'coin_stitch': {
+      'コインポケット裏シングルステッチ': { 'back_stitch': ['バックポケットシングルステッチ'], 'back_tack': ['黒カンヌキ'], 'out_seam': ['シングル×シングル'] },
+      'コインポケット裏チェーンステッチ': { 'hidden_rivet': ['隠しリベット無'], 'back_stitch': ['バックポケットチェーンステッチ'], 'fly_btn': ['通常Rボタン'] }
+    },
+    'top_stitch': {
+      'Vステッチ': { 'back_stitch': ['バックポケットシングルステッチ'], 'back_tack': ['黒カンヌキ'], 'out_seam': ['シングル×シングル'] },
+      '平行ステッチ': { 'hidden_rivet': ['隠しリベット無'] }
+    },
+    'hidden_rivet': { '隠しリベット有': { 'top_stitch': ['Vステッチ'], 'back_stitch': ['バックポケットシングルステッチ'], 'back_tack': ['黒カンヌキ'], 'out_seam': ['シングル×シングル'] } },
+    'back_stitch': { 'バックポケットチェーンステッチ': { 'coin_selvedge': ['コインポケット赤耳無'], 'top_stitch': ['平行ステッチ'], 'hidden_rivet': ['隠しリベット無'] } },
+    'back_tack': { '金カンヌキ': { 'coin_selvedge': ['コインポケット赤耳無'], 'top_stitch': ['平行ステッチ'], 'hidden_rivet': ['隠しリベット無'] } },
+    'crotch_tack': { '股下カンヌキ無': { 'coin_stitch': ['コインポケット裏シングルステッチ'], 'top_stitch': ['Vステッチ'], 'back_stitch': ['バックポケットシングルステッチ'], 'back_tack': ['黒カンヌキ'], 'out_seam': ['シングル×シングル'] } },
+    'fly_btn': { '足長Rボタン': { 'back_stitch': ['バックポケットシングルステッチ'], 'back_tack': ['黒カンヌキ'], 'out_seam': ['シングル×シングル'] } },
+    'out_seam': {
+      'シングル×シングル': { 'back_stitch': ['バックポケットシングルステッチ'], 'back_tack': ['黒カンヌキ'] },
+      'シングル×チェーン': { 'coin_selvedge': ['コインポケット赤耳無'], 'coin_stitch': ['コインポケット裏チェーンステッチ'], 'top_stitch': ['平行ステッチ'], 'hidden_rivet': ['隠しリベット無'], 'crotch_tack': ['股下カンヌキ有', 'ズレカン'], 'fly_btn': ['通常Rボタン'] }
+    }
+  };
+
+  function updateDependency() {
+    document.querySelectorAll('.radio-btn').forEach(btn => btn.classList.remove('disabled'));
+    const selections = {};
+    document.querySelectorAll('input[type="radio"]:checked').forEach(el => selections[el.name] = el.value);
+    for (let name in selections) {
+      const val = selections[name];
+      if (LOGIC_RULES[name] && LOGIC_RULES[name][val]) {
+        const restrictions = LOGIC_RULES[name][val];
+        for (let targetName in restrictions) {
+          const allowedValues = restrictions[targetName];
+          document.querySelectorAll(`input[name="${targetName}"]`).forEach(input => {
+            if (!allowedValues.includes(input.value)) {
+              input.parentElement.classList.add('disabled');
+              if (input.checked) { input.checked = false; input.dataset.wasChecked = 'false'; }
+            }
+          });
+        }
+      }
+    }
+  }
+
+  // トグル機能
+  document.querySelectorAll('input[type="radio"]').forEach(radio => {
+    radio.addEventListener('click', function() {
+      if (this.dataset.wasChecked === 'true') { this.checked = false; this.dataset.wasChecked = 'false'; } 
+      else { document.querySelectorAll(`input[name="${this.name}"]`).forEach(r => r.dataset.wasChecked = 'false'); this.dataset.wasChecked = 'true'; }
+      updateDependency();
+    });
+  });
+
+  const uploadArea = document.getElementById('uploadArea');
+  const imageInput = document.getElementById('imageInput');
+  uploadArea.onclick = () => imageInput.click();
+  imageInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('preview').src = ev.target.result;
+        document.getElementById('preview').style.display = 'block';
+        document.getElementById('uploadContent').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  async function appraise() {
+    if(!GAS_WEBAPP_URL || GAS_WEBAPP_URL.includes('貼り付け')) { alert("https://script.google.com/macros/s/AKfycbzmq7wleIG-QGoeKC_lIOWBiv3eJs9u3XUs_2lTghspouYLBHP84l3TWnT5i3lSUu1jiw/exec"); return; }
+    const btn = document.getElementById('appraiseBtn');
+    const loading = document.getElementById('loading');
+    const resultSection = document.getElementById('resultSection');
+    const errorDiv = document.getElementById('errorMsg');
+    
+    errorDiv.style.display = 'none';
+    resultSection.style.display = 'none';
+    btn.disabled = true;
+    loading.style.display = 'block';
+
+    try {
+      const selected = [];
+      const names = ['size_w','size_l','actual_w','actual_l','red_tab','patch_material','patch_condition','hem','front','selvedge','coin_selvedge','coin_stitch','top_stitch','hidden_rivet','back_stitch','back_tack','crotch_tack','fly_btn','out_seam'];
+      names.forEach(name => {
+        const el = document.querySelector(`input[name="${name}"]:checked, select[name="${name}"]`);
+        if (el && el.value) selected.push(`${name}: ${el.value}`);
+      });
+
+      let imageData = null;
+      let mimeType = "";
+      if (imageInput.files[0]) {
+        mimeType = imageInput.files[0].type;
+        imageData = await new Promise((res) => {
+          const r = new FileReader();
+          r.onload = e => res(e.target.result.split(',')[1]);
+          r.readAsDataURL(imageInput.files[0]);
+        });
+      }
+
+      const prompt = `あなたはヴィンテージデニム専門店「MIKOSHIYA」の主任鑑定士です。画像と特徴から正確に鑑定しJSONで出力せよ。
+      【特徴】: ${selected.join(', ')}
+      【形式】: {"model": "...", "era": "...", "value": "...", "detail": "...鑑定根拠を詳細に。最後に『MIKOSHIYA LAB鑑定済みだペン。』"}`;
+
+      const response = await fetch(GAS_WEBAPP_URL, {
+        method: 'POST',
+        body: JSON.stringify({ prompt, imageData, mimeType })
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      const result = JSON.parse(data.candidates[0].content.parts[0].text.match(/\{[\s\S]*\}/)[0]);
+
+      document.getElementById('resultModel').textContent = result.model || '—';
+      document.getElementById('resultEra').textContent = result.era || '—';
+      document.getElementById('resultValue').textContent = result.value || '—';
+      document.getElementById('resultDetail').textContent = result.detail || '';
+      document.getElementById('auctionLink').href = "https://auctions.yahoo.co.jp/search/search?p=" + encodeURIComponent(result.model || "Levi's 501 ヴィンテージ");
+      
+      resultSection.style.display = 'block';
+    } catch (e) {
+      errorDiv.style.display = 'block';
+      errorDiv.textContent = `鑑定失敗だペン！ 理由: ${e.message}`;
+    } finally {
+      loading.style.display = 'none';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
