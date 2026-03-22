@@ -124,10 +124,9 @@
 </div>
 
 <script>
-  // ★重要：ここにGASでデプロイした「ウェブアプリのURL」を貼り付けてペン！
+  // GASのURL埋め込み済み
   const GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzmq7wleIG-QGoeKC_lIOWBiv3eJs9u3XUs_2lTghspouYLBHP84l3TWnT5i3lSUu1jiw/exec';
 
-  // 連動ロジック
   const LOGIC_RULES = {
     'coin_selvedge': { 'コインポケット赤耳有': { 'coin_stitch': ['コインポケット裏シングルステッチ'] } },
     'coin_stitch': {
@@ -195,7 +194,10 @@
   };
 
   async function appraise() {
-    if(!GAS_WEBAPP_URL || GAS_WEBAPP_URL.includes('貼り付け')) { console.error("GAS_WEBAPP_URL is missing."); return; }
+    if(!GAS_WEBAPP_URL || GAS_WEBAPP_URL.includes('貼り付け')) {
+      console.warn("GAS_WEBAPP_URL is not configured.");
+      return; 
+    }
     const btn = document.getElementById('appraiseBtn');
     const loading = document.getElementById('loading');
     const resultSection = document.getElementById('resultSection');
